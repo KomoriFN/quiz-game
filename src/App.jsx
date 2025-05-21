@@ -1,0 +1,442 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
+// Импорт локальных изображений
+import MrS1rshAvatar from './assets/MrS1rsh.jpg';
+import StepaksAvatar from './assets/stepaks.jpg';
+import EnspireAvatar from './assets/Enspire.jpg';
+
+// Локализованные тексты
+const TEXTS = {
+  ru: {
+    bestie: "bestie",
+    result: "Результат",
+    score: "Вы набрали",
+    of: "из",
+    playAgain: "Пройти ещё раз",
+    timer: "⏱️"
+  },
+  en: {
+    bestie: "bestie",
+    result: "Result",
+    score: "You scored",
+    of: "of",
+    playAgain: "Play again",
+    timer: "⏱️"
+  }
+};
+
+// Данные участников команды
+const TEAM_MEMBERS = [
+  {
+    name: "MrS1rsh",
+    twitterUrl: "https://x.com/MrS1rsh",
+    avatar: MrS1rshAvatar,
+    label: "bestie"
+  },
+  {
+    name: "0xEnsp1re",
+    twitterUrl: "https://x.com/0xEnsp1re",
+    avatar: EnspireAvatar
+  },
+  {
+    name: "stepaks576",
+    twitterUrl: "https://x.com/stepaks576",
+    avatar: StepaksAvatar
+  }
+];
+
+// Вопросы на русском и английском
+const QUESTIONS = {
+  ru: [
+    {
+      question: "Что означает аббревиатура ZK в ZK-доказательствах?",
+      options: ["Zero Knowledge", "Zettabyte Kernel", "Zonal Key"],
+      correctAnswer: 0,
+      explanation: "Zero Knowledge (дословно «нулевое знание») — метод, позволяющий доказать истинность утверждения без раскрытия информации."
+    },
+    {
+    question: "Какой язык программирования используется в Succinct SP1?",
+    options: ["Solidity", "Rust", "C++"],
+    correctAnswer: 1,
+    explanation: "SP1 написан на Rust для максимальной производительности при генерации ZK-доказательств."
+  },
+  {
+    question: "Какую проблему решает Succinct в блокчейн-индустрии?",
+    options: ["Высокие комиссии Gas", "Медленную генерацию ZK-доказательств", "Централизацию валидаторов"],
+    correctAnswer: 1,
+    explanation: "Медленную генерацию ZK-доказательств"
+  },
+  {
+    question: "Какой протокол использует Succinct для децентрализованных доказательств?",
+    options: ["zkEVM", "SP1", "Optimistic Rollups"],
+    correctAnswer: 1,
+    explanation: "SP1"
+  },
+  {
+    question: "В каких сетях чаще всего применяются ZK-технологии?",
+    options: ["Bitcoin", "Solana", "Ethereum и L2-решения"],
+    correctAnswer: 2,
+    explanation: "Ethereum и L2-решения"
+  },
+  {
+    question: "Что такое «децентрализованная генерация доказательств»?",
+    options: ["Когда ноды работают независимо", "Когда доказательства создает только одна нода", "Когда доказательства проверяются оффчейн"],
+    correctAnswer: 0,
+    explanation: "Когда ноды работают независимо"
+  },
+  {
+    question: "Какой тип ZK-доказательств использует Succinct?",
+    options: ["SNARKs", "STARKs", "Оба варианта"],
+    correctAnswer: 2,
+    explanation: "Оба варианта"
+  },
+  {
+    question: "Как Succinct ускоряет проверку транзакций?",
+    options: ["Через кэширование данных", "Через оптимизированные ZK-доказательства", "Через шардинг"],
+    correctAnswer: 1,
+    explanation: "Через оптимизированные ZK-доказательства"
+  },
+  {
+    question: "Какой механизм в SP1 снижает затраты на Gas?",
+    options: ["Сжатие данных", "Прувинг без доверенной настройки", "Использование GPU"],
+    correctAnswer: 1,
+    explanation: "Прувинг без доверенной настройки"
+  },
+  { 
+    question: "Какой элемент ZK-доказательств обеспечивает приватность?",
+    options: ["Нулевое разглашение данных", "Шифрование AES-256", "Хеширование SHA-3"],
+    correctAnswer: 0,
+    explanation: "Нулевое разглашение данных"
+  },
+  ],
+  en: [
+    {
+      question: "What does ZK stand for in ZK proofs?",
+      options: ["Zero Knowledge", "Zettabyte Kernel", "Zonal Key"],
+      correctAnswer: 0,
+      explanation: "Zero Knowledge - a method that allows proving the truth of a statement without revealing the information."
+    },
+     {
+    question: "What programming language is used in Succinct SP1?",
+    options: ["Solidity", "Rust", "C++"],
+    correctAnswer: 1,
+    explanation: "SP1 is written in Rust to maximize performance in ZK-proof generation."
+  },
+  {
+    question: "What problem does Succinct aim to solve in the blockchain industry?",
+    options: ["High Gas fees", "Slow ZK-proof generation", "Validator centralization"],
+    correctAnswer: 1,
+    explanation: "Succinct addresses the issue of slow ZK-proof generation"
+  },
+  {
+    question: "Which protocol does Succinct use for decentralized proofs?",
+    options: ["zkEVM", "SP1", "Optimistic Rollups"],
+    correctAnswer: 1,
+    explanation: "SP1"
+  },
+  {
+    question: "In which networks are ZK technologies most commonly used?",
+    options: ["Bitcoin", "Solana", "Ethereum and L2 solutions"],
+    correctAnswer: 2,
+    explanation: "Ethereum and L2 solutions"
+  },
+  {
+    question: "What is decentralized proof generation?",
+    options: ["When nodes operate independently", "When proofs are generated by a single node", "When proofs are verified off-chain"],
+    correctAnswer: 0,
+    explanation: "When nodes operate independently"
+  },
+  {
+    question: "What type of ZK-proofs does Succinct use?",
+    options: ["SNARKs", "STARKs", "all of above"],
+    correctAnswer: 2,
+    explanation: "all of above"
+  },
+  {
+    question: "How does Succinct accelerate transaction verification?",
+    options: ["Through data caching", "Through optimized ZK-proofs", "Through sharding"],
+    correctAnswer: 1,
+    explanation: "Through optimized ZK-proofs"
+  },
+  {
+    question: " What mechanism in SP1 reduces Gas costs?",
+    options: ["Data compression", "Trustless proving", "Use of GPU"],
+    correctAnswer: 1,
+    explanation: "Trustless proving"
+  },
+  { 
+    question: "What element of ZK-proofs ensures privacy?",
+    options: ["Zero data disclosure", "AES-256 encryption", "SHA-3 hashing"],
+    correctAnswer: 0,
+    explanation: "Zero data disclosure"
+  },
+  ]
+};
+
+export default function SuccinctQuiz() {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const [language, setLanguage] = useState('ru');
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'ru' ? 'en' : 'ru');
+  };
+
+  // Таймер
+  useEffect(() => {
+    if (timeLeft > 0 && !showResult) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0) {
+      handleAnswer(null);
+    }
+  }, [timeLeft, showResult]);
+
+  const handleAnswer = (optionIndex) => {
+    setSelectedOption(optionIndex);
+    
+    setTimeout(() => {
+      if (optionIndex === QUESTIONS[language][currentQuestion].correctAnswer) {
+        setScore(score + 1);
+      }
+
+      if (currentQuestion < QUESTIONS[language].length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+        setTimeLeft(15);
+        setSelectedOption(null);
+      } else {
+        setShowResult(true);
+      }
+    }, 1500);
+  };
+
+  const restartQuiz = () => {
+    setCurrentQuestion(0);
+    setScore(0);
+    setShowResult(false);
+    setSelectedOption(null);
+    setTimeLeft(15);
+  };
+
+  // Стили
+  const styles = {
+    container: {
+      maxWidth: '800px',
+      margin: '0 auto',
+      padding: '2rem',
+      fontFamily: '"JetBrains Mono", monospace',
+      background: '#1a1a2e',
+      color: '#e2e2f7',
+      borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(110, 69, 226, 0.3)',
+      position: 'relative'
+    },
+    languageButton: {
+      position: 'absolute',
+      top: '1rem',
+      left: '1rem',
+      background: '#6e45e2',
+      color: 'white',
+      border: 'none',
+      padding: '0.3rem 0.8rem',
+      borderRadius: '20px',
+      cursor: 'pointer',
+      fontSize: '0.8rem',
+      zIndex: 10
+    },
+    questionHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: '2rem',
+      marginTop: '40px'
+    },
+    questionText: {
+      flex: 1
+    },
+    avatarsContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+      marginLeft: '1rem',
+      marginTop: '30px'
+    },
+    avatarWrapper: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    },
+    avatarLabel: {
+      fontSize: '0.8rem',
+      color: '#6e45e2',
+      textAlign: 'center',
+      marginBottom: '4px',
+      fontWeight: 'bold'
+    },
+    avatar: {
+      width: '50px',
+      height: '50px',
+      borderRadius: '50%',
+      objectFit: 'cover',
+      cursor: 'pointer',
+      border: '2px solid #6e45e2'
+    },
+    question: {
+      fontSize: '1.5rem',
+      marginBottom: '2rem',
+      color: '#6e45e2'
+    },
+    option: {
+      padding: '12px 20px',
+      margin: '8px 0',
+      background: '#252547',
+      border: '1px solid #6e45e2',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    },
+    correctOption: {
+      background: '#2ecc71',
+      borderColor: '#2ecc71'
+    },
+    wrongOption: {
+      background: '#e74c3c',
+      borderColor: '#e74c3c'
+    },
+    timer: {
+      position: 'absolute',
+      top: '1rem',
+      right: '1rem',
+      background: '#6e45e2',
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '0.9rem'
+    },
+    result: {
+      textAlign: 'center'
+    },
+    resultTitle: {
+      color: '#6ecc71',
+      fontSize: '2rem'
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <button 
+        style={styles.languageButton}
+        onClick={toggleLanguage}
+      >
+        {language === 'ru' ? 'ENG' : 'RUS'}
+      </button>
+
+      {!showResult ? (
+        <motion.div
+          key={`${language}-${currentQuestion}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div style={styles.timer}>{TEXTS[language].timer} {timeLeft}s</div>
+          
+          <div style={styles.questionHeader}>
+            <div style={styles.questionText}>
+              <h2 style={styles.question}>
+                {QUESTIONS[language][currentQuestion].question}
+              </h2>
+
+              <div style={{ marginTop: '2rem' }}>
+                {QUESTIONS[language][currentQuestion].options.map((option, index) => {
+                  let optionStyle = { ...styles.option };
+                  
+                  if (selectedOption !== null) {
+                    if (index === QUESTIONS[language][currentQuestion].correctAnswer) {
+                      optionStyle = { ...optionStyle, ...styles.correctOption };
+                    } else if (index === selectedOption) {
+                      optionStyle = { ...optionStyle, ...styles.wrongOption };
+                    }
+                  }
+
+                  return (
+                    <motion.div
+                      key={index}
+                      style={optionStyle}
+                      onClick={() => selectedOption === null && handleAnswer(index)}
+                      whileHover={{ scale: selectedOption === null ? 1.03 : 1 }}
+                      whileTap={{ scale: selectedOption === null ? 0.98 : 1 }}
+                    >
+                      {option}
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {selectedOption !== null && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{ marginTop: '1.5rem', color: '#a1a1c7' }}
+                >
+                  {QUESTIONS[language][currentQuestion].explanation}
+                </motion.div>
+              )}
+            </div>
+
+            <div style={styles.avatarsContainer}>
+              {TEAM_MEMBERS.map((member, index) => (
+                <div key={index} style={styles.avatarWrapper}>
+                  {index === 0 && member.label && (
+                    <div style={styles.avatarLabel}>{TEXTS[language].bestie}</div>
+                  )}
+                  <a 
+                    href={member.twitterUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={member.name}
+                  >
+                    <motion.img
+                      src={member.avatar}
+                      alt={member.name}
+                      style={styles.avatar}
+                      whileHover={{ scale: 1.1, borderColor: '#2ecc71' }}
+                      whileTap={{ scale: 0.95 }}
+                    />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={styles.result}
+        >
+          <h2 style={styles.resultTitle}>{TEXTS[language].result}</h2>
+          <p style={{ fontSize: '1.2rem' }}>
+            {TEXTS[language].score} <strong>{score}</strong> {TEXTS[language].of} <strong>{QUESTIONS[language].length}</strong>
+          </p>
+          
+          <motion.button
+            style={{
+              ...styles.option,
+              background: '#6e45e2',
+              marginTop: '2rem',
+              fontSize: '1rem'
+            }}
+            onClick={restartQuiz}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {TEXTS[language].playAgain}
+          </motion.button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
